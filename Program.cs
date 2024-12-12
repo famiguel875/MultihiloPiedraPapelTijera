@@ -4,29 +4,99 @@
     private const int PAPER = 2;
     private const int SCISSORS = 3;
 
-    private static int player1Score = 0;
-    private static int player2Score = 0;
+    private static readonly ThreadLocal<Random> threadRandom = new ThreadLocal<Random>(() => new Random());
     private static readonly object lockObj = new object();
 
-    private static readonly ThreadLocal<Random> threadRandom = new ThreadLocal<Random>(() => new Random());
-
-    public static void ResetScores()
+    public static void Main(string[] args)
     {
-        player1Score = 0;
-        player2Score = 0;
+        Console.WriteLine("Starting Rock-Paper-Scissors Tournament!");
+
+        // Create 16 players
+        List<string> players = Enumerable.Range(1, 16).Select(i => $"Player {i}").ToList();
+
+        // Execute the tournament
+        string winner = ExecuteTournament(players);
+
+        Console.WriteLine($"The tournament winner is: {winner}");
     }
 
-    public static void UpdateScore(int result)
+    public static string ExecuteTournament(List<string> players)
     {
-        if (result == 1) player1Score++;
-        else if (result == -1) player2Score++;
+        while (players.Count > 1)
+        {
+            List<string> nextRound = new List<string>();
+            List<Thread> threads = new List<Thread>();
+
+            for (int i = 0; i < players.Count; i += 2)
+            {
+                int index = i; // Capture index for closure
+                Thread thread = new Thread(() =>
+                {
+                    string winner = PlayMatch(players[index], players[index + 1]);
+                    lock (lockObj)
+                    {
+                        nextRound.Add(winner);
+                    }
+                });
+
+                threads.Add(thread);
+                thread.Start();
+            }
+
+            // Wait for all matches to complete
+            foreach (var thread in threads)
+            {
+                thread.Join();
+            }
+
+            players = nextRound;
+            Console.WriteLine("Advancing to next round with players: " + string.Join(", ", players));
+        }
+
+        return players[0];
     }
 
-    public static bool CheckGameOver(int round = 0)
+    public static string PlayMatch(string player1, string player2)
     {
-        if (player1Score == 2 || player2Score == 2) return true;
-        if (round >= 3 && player1Score != player2Score) return true;
-        return false;
+        int player1Wins = 0;
+        int player2Wins = 0;
+        int round = 1;
+
+        while (round <= 3 || player1Wins == player2Wins)
+        {
+            int move1 = threadRandom.Value!.Next(1, 4);
+            int move2 = threadRandom.Value!.Next(1, 4);
+
+            int result = DetermineWinner(move1, move2);
+
+            Console.WriteLine($"Round {round}: {player1} ({MoveToString(move1)}) vs {player2} ({MoveToString(move2)})");
+
+            if (result == 1)
+            {
+                player1Wins++;
+                Console.WriteLine($"{player1} wins round {round}!");
+            }
+            else if (result == -1)
+            {
+                player2Wins++;
+                Console.WriteLine($"{player2} wins round {round}!");
+            }
+            else
+            {
+                Console.WriteLine("It's a tie! Replaying round.");
+            }
+
+            if (player1Wins == 2 || player2Wins == 2)
+            {
+                break;
+            }
+
+            round++;
+        }
+
+        string matchWinner = player1Wins > player2Wins ? player1 : player2;
+        Console.WriteLine($"{matchWinner} wins the match!");
+        return matchWinner;
     }
 
     public static int DetermineWinner(int move1, int move2)
@@ -41,43 +111,14 @@
         return -1;
     }
 
-    static void Main(string[] args)
+    private static string MoveToString(int move)
     {
-        Thread player1 = new Thread(() => Play("Player 1"));
-        Thread player2 = new Thread(() => Play("Player 2"));
-
-        player1.Start();
-        player2.Start();
-
-        player1.Join();
-        player2.Join();
-
-        Console.WriteLine("Game Over!");
-    }
-
-    static void Play(string playerName)
-    {
-        int round = 1;
-
-        while (true)
+        return move switch
         {
-            int move1 = threadRandom.Value!.Next(1, 4);
-            int move2 = threadRandom.Value!.Next(1, 4);
-
-            lock (lockObj)
-            {
-                Console.WriteLine($"{playerName} plays round {round} with moves {move1} vs {move2}");
-
-                int result = DetermineWinner(move1, move2);
-
-                UpdateScore(result);
-
-                Console.WriteLine($"Scores => Player 1: {player1Score}, Player 2: {player2Score}");
-
-                if (CheckGameOver(round)) return;
-            }
-
-            round++;
-        }
+            ROCK => "Rock",
+            PAPER => "Paper",
+            SCISSORS => "Scissors",
+            _ => "Unknown",
+        };
     }
 }

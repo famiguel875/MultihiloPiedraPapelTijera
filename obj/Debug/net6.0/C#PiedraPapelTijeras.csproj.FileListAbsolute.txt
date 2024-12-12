@@ -98,3 +98,4 @@ C:\C#Ejercicios\C#PiedraPapelTijeras\obj\Debug\net6.0\refint\C#PiedraPapelTijera
 C:\C#Ejercicios\C#PiedraPapelTijeras\obj\Debug\net6.0\C#PiedraPapelTijeras.pdb
 C:\C#Ejercicios\C#PiedraPapelTijeras\obj\Debug\net6.0\C#PiedraPapelTijeras.genruntimeconfig.cache
 C:\C#Ejercicios\C#PiedraPapelTijeras\obj\Debug\net6.0\ref\C#PiedraPapelTijeras.dll
+C:\C#Ejercicios\C#PiedraPapelTijeras\obj\Debug\net6.0\C#PiedraPapelTijeras.sourcelink.json
